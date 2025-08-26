@@ -1,0 +1,72 @@
+from sklearn.datasets import fetch_openml
+
+X_adult, y_adult = fetch_openml("adult", version=2, return_X_y=True)
+
+# Remove redundant and non-feature columns
+X_adult = X_adult.drop(["education-num", "fnlwgt"], axis="columns")
+X_adult.dtypes
+from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(X_adult, y_adult, random_state=0)
+hist = HistGradientBoostingClassifier(categorical_features="from_dtype")
+
+hist.fit(X_train, y_train)
+y_decision = hist.decision_function(X_test)
+print(f"ROC AUC score is {roc_auc_score(y_test, y_decision)}")
+import polars as pl
+
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+df = pl.DataFrame(
+    {"height": [120, 140, 150, 110, 100], "pet": ["dog", "cat", "dog", "cat", "cat"]}
+)
+preprocessor = ColumnTransformer(
+    [
+        ("numerical", StandardScaler(), ["height"]),
+        ("categorical", OneHotEncoder(sparse_output=False), ["pet"]),
+    ],
+    verbose_feature_names_out=False,
+)
+preprocessor.set_output(transform="polars")
+
+df_out = preprocessor.fit_transform(df)
+df_out
+Abdul-aziz
+import matplotlib.pyplot as plt
+
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.inspection import PartialDependenceDisplay
+
+n_samples = 500
+rng = np.random.RandomState(0)
+X = rng.randn(n_samples, 2)
+noise = rng.normal(loc=0.0, scale=0.01, size=n_samples)
+y = 5 * X[:, 0] + np.sin(10 * np.pi * X[:, 0]) - noise
+
+rf_no_cst = RandomForestRegressor().fit(X, y)
+rf_cst = RandomForestRegressor(monotonic_cst=[1, 0]).fit(X, y)
+
+disp = PartialDependenceDisplay.from_estimator(
+    rf_no_cst,
+    X,
+    features=[0],
+    feature_names=["feature 0"],
+    line_kw={"linewidth": 4, "label": "unconstrained", "color": "tab:blue"},
+)
+PartialDependenceDisplay.from_estimator(
+    rf_cst,
+    X,
+    features=[0],
+    line_kw={"linewidth": 4, "label": "constrained", "color": "tab:orange"},
+    ax=disp.axes_,
+)
+disp.axes_[0, 0].plot(
+    X[:, 0], y, "o", alpha=0.5, zorder=-1, label="samples", color="tab:green"
+)
+disp.axes_[0, 0].set_ylim(-3, 3)
+disp.axes_[0, 0].set_xlim(-1, 1)
+disp.axes_[0, 0].legend()
+plt.show()
